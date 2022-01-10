@@ -1,139 +1,84 @@
 <?php
 
-class Parameters
-{
-    const FILE_NAME = 'products.txt';
-    const COLUMNS = ['item', 'price'];
-    const POPULATION_SIZE = 6;
-    const BUDGET = 10000;
-}
-
 class Catalogue
 {
-    function createProductColumn($listOfRawProduct)
+    function createProductColumn($columns, $listOfRawProduct)
     {
+        // print_r($columns);
+        // print "<br>";
+        // print_r($listOfRawProduct);
+        // print "<pre>";
+        // print "<pre>";
+        // exit;
         foreach (array_keys($listOfRawProduct) as $listOfRawProductKey) {
-            $listOfRawProduct[Parameters::COLUMNS[$listOfRawProductKey]] = $listOfRawProduct[$listOfRawProductKey];
+            // print_r($listOfRawProductKey);
+            // echo "<br>";
+            // print_r($listOfRawProduct[$listOfRawProductKey]);
+            // echo "<br>";
+            //mengisikan item kedalam item dan price dan price
+            // $listOfRawProduct[$columns[$listOfRawProductKey]] = $listOfRawProduct[$listOfRawProductKey];
+            $listOfRawProduct[] = $listOfRawProduct[$listOfRawProductKey];
+            // echo ($columns[$listOfRawProductKey]) . ' = ' . $listOfRawProductKey . '<br>';
             unset($listOfRawProduct[$listOfRawProductKey]);
         }
+        // exit;
+        // var_dump($listOfRawProduct);
         return $listOfRawProduct;
     }
 
-    function product()
+    function product($parameters)
     {
         $collectionOfListProduct = [];
 
-        $raw_data = file(Parameters::FILE_NAME);
+        $raw_data = file($parameters['file_name']);
         foreach ($raw_data as $listOfRawProduct) {
-            $collectionOfListProduct[] = $this->createProductColumn(explode(",", $listOfRawProduct));
+            $collectionOfListProduct[] = $this->createProductColumn($parameters['columns'], explode(",", $listOfRawProduct));
         }
-        return $collectionOfListProduct;
+        return [
+            'product' => $collectionOfListProduct,
+            'gen_length' => count($collectionOfListProduct)
+        ];
     }
 }
 
-class Individu
+
+class PopulationGenerator
 {
-    function countNumberOfGen()
+    function createIndividu($parameters)
     {
-        $catalogue = new Catalogue();
-        return count($catalogue->product());
-    }
-    function createRandomIndividu()
-    {
-        for ($i = 0; $i <= $this->countNumberOfGen() - 1; $i++) {
+        $catalogue = new Catalogue;
+        $lengthOfGen = $catalogue->product($parameters)['gen_length'];
+        for ($i = 0; $i <= $lengthOfGen - 1; $i++) {
             $ret[] = rand(0, 1);
         }
         return $ret;
     }
-}
 
-class Population
-{
-
-    function createRandomPopulation()
+    function createPopulation($parameters)
     {
-        $individu = new Individu;
-        for ($i = 0; $i <= Parameters::POPULATION_SIZE - 1; $i++) {
-            $ret[] = $individu->createRandomIndividu();
+        for ($i = 0; $i <= $parameters['population_size']; $i++) {
+            $ret[] = $this->createIndividu($parameters);
         }
+        //$val merupakan representasi populasi sengankan $ret keseluruhan populasi
 
-        // foreach ($ret as $key => $val) {
-        //     var_dump($val);
-        //     echo '<br>';
-        // }
-        return $ret;
-    }
-}
-
-class Fitness
-{
-    function selectingItem($individu)
-    {
-        $catalogue = new Catalogue;
-
-        foreach ($individu as $individuKey => $binaryGen) {
-            if ($binaryGen === 1) {
-                $ret[] = [
-                    'selectedKey' => $individuKey,
-                    'SelectedPrice' => $catalogue->product()[$individuKey]['price']
-                ];
-            }
-        }
-        return $ret;
-    }
-
-    function calculateValue($individu)
-    {
-        // print_r($this->selectingItem($individu));
-        // echo '<br>';
-        return array_sum(array_column($this->selectingItem($individu), 'SelectedPrice'));
-    }
-
-    function countSelectedItems($individu)
-    {
-        return count($this->selectingItem($individu));
-    }
-
-    function isFit($fitnessValue)
-    {
-        if ($fitnessValue <= Parameters::BUDGET) {
-            return TRUE;
-        }
-    }
-
-    //digunakan untuk memasukkan barang kedalam keranjang
-    function fitnessEvaluation($population)
-    {
-        $catalogue = new Catalogue;
-        foreach ($population as $listOfIndividuKey => $listOfIndividu) {
-            echo 'individu - ' . $listOfIndividuKey . '<br>';
-            foreach ($listOfIndividu as $individuKey => $binaryGen) {
-                echo $binaryGen . '&nbsp;&nbsp';
-                print_r($catalogue->product()[$individuKey]);
-                echo '<br>';
-            }
-            $fitnessValue = $this->calculateValue($listOfIndividu);
-            echo 'Fitness Value : ' . $fitnessValue;
-            echo '<br>';
-            echo 'Items : ' . $this->countSelectedItems($listOfIndividu);
-            echo '<br>';
-            if ($this->isFit($fitnessValue)) {
-                echo '(fit)';
-            } else {
-                echo '(not fit)';
-            }
-            echo '<br>' . '<br>';
+        foreach ($ret as $key => $val) {
+            // print "<pre>";
+            print_r($val);
         }
     }
 }
 
-// $katalog = new Catalogue;
-// var_dump($katalog->product());
 
-$initialPopulation = new Population;
-$population = $initialPopulation->createRandomPopulation();
-$fitness = new Fitness;
-$fitness->fitnessEvaluation($population);
+$parameters = [
+    'file_name' => 'products.txt',
+    'columns' => ['item', 'price'],
+    'population_size' => 10
+];
 
-// $individu = new Individu;
-// var_dump($individu->createRandomIndividu());
+$katalog = new Catalogue;
+// print "<pre>";
+// var_dump($katalog->product($parameters));
+// var_dump($katalog->createProductColumn($parameters));
+// print "<pre>";
+$initialPopulation = new PopulationGenerator;
+$initialPopulation->createPopulation($parameters);
